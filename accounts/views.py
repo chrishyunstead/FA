@@ -133,6 +133,21 @@ def fetch_football_news():
     return articles
 
 
+# 회원탈퇴
+@login_required
+def delete_user(request):
+    user = request.user
+    if user.team_no:
+        messages.error(request, "팀 탈퇴를 먼저 진행해야 회원 탈퇴가 가능합니다.")
+        return redirect("accounts:mypage")
+    if request.method == "POST":
+        user.delete()
+        messages.success(request, "회원탈퇴가 완료되었습니다.")
+        logout(request)
+        return redirect("accounts:main")
+    return render(request, "accounts/delete_user.html")
+
+
 # 메인화면 뷰
 def main(request):
     # results = MatchResult.objects.filter(team=team) if team else None
