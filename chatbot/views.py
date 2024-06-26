@@ -1,14 +1,15 @@
-import asyncio
-import json
+# import asyncio
+# import json
 
 import requests
 from django.shortcuts import render
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from transformers import AutoModelForCausalLM, AutoTokenizer
-import torch
 
-from my_settings import HUGGINGFACE_TOKEN
+# from django.views.decorators.csrf import csrf_exempt
+# from transformers import AutoModelForCausalLM, AutoTokenizer
+# import torch
+#
+# from my_settings import HUGGINGFACE_TOKEN
 
 # # GGUF 모델 로드
 # model_name = "Dongwookss/small_fut_final"
@@ -113,21 +114,21 @@ from my_settings import HUGGINGFACE_TOKEN
 #     return render(request, "chatbot.html")
 
 
-def get_model_response(input_text):
-    url = "http://127.0.0.1:8000/generate"  # FastAPI 서버의 IP 주소와 포트 사용
-    headers = {"Content-Type": "application/json"}
-    data = {"input_text": input_text}
-
-    response = requests.post(url, json=data, headers=headers)
-    if response.status_code == 200:
-        return response.json().get("response")
-    else:
-        return "Error: Unable to get response"
-
-
-def chatbot_view(request):
-    if request.method == "POST":
-        input_text = request.POST.get("input_text")
-        response_text = get_model_response(input_text)
-        return JsonResponse({"response": response_text})
-    return render(request, "chatbot.html")
+# def get_model_response(input_text):
+#     url = "http://127.0.0.1:8000/generate"  # FastAPI 서버의 IP 주소와 포트 사용
+#     headers = {"Content-Type": "application/json"}
+#     data = {"input_text": input_text}
+#
+#     response = requests.post(url, json=data, headers=headers)
+#     if response.status_code == 200:
+#         return response.json().get("response")
+#     else:
+#         return "Error: Unable to get response"
+#
+#
+# def chatbot_view(request):
+#     if request.method == "POST":
+#         input_text = request.POST.get("input_text")
+#         response_text = get_model_response(input_text)
+#         return JsonResponse({"response": response_text})
+#     return render(request, "chatbot.html")

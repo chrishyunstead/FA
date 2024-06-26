@@ -15,7 +15,7 @@ from django.urls import reverse_lazy
 from environ import Env
 
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 env = Env()
 
@@ -40,7 +40,7 @@ SECRET_KEY = env.str(
 DEBUG = env.bool("DEBUG", True)
 
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=[])
-
+# ALLOWED_HOSTS = ["3.37.120.16"]
 
 # Application definition
 
@@ -68,7 +68,7 @@ INSTALLED_APPS = [
     "channels",
     "widget_tweaks",
     "chatbot",
-    "chat",
+    # "corsheaders",
 ]
 
 # 팀채팅 구현
@@ -84,12 +84,14 @@ CHANNEL_LAYERS = {
     },
 }
 
-if DEBUG:
-    INSTALLED_APPS += [
-        "debug_toolbar",
-    ]
+# if DEBUG:
+#     INSTALLED_APPS += [
+#         "debug_toolbar",
+#     ]
 
 MIDDLEWARE = [
+    # "corsheaders.middleware.CorsMiddleware",
+    "django.middleware.common.CommonMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -99,10 +101,15 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "django_htmx.middleware.HtmxMiddleware",
 ]
-if DEBUG:
-    MIDDLEWARE = [
-        "debug_toolbar.middleware.DebugToolbarMiddleware",
-    ] + MIDDLEWARE
+
+# CORS_ORIGIN_ALLOW_ALL = True
+#
+# CORS_ALLOW_CREDENTIALS = True  # 인증 정보를 포함할지 여부
+
+# if DEBUG:
+#     MIDDLEWARE = [
+#         "debug_toolbar.middleware.DebugToolbarMiddleware",
+#     ] + MIDDLEWARE
 
 
 ROOT_URLCONF = "mysite.urls"
@@ -112,7 +119,7 @@ TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
         "DIRS": [
-            BASE_DIR / "core" / "src-django-components",
+            BASE_DIR / "templates",
         ],
         "APP_DIRS": True,
         "OPTIONS": {
@@ -164,7 +171,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = env.str("LANGUAGE_CODE", "ko-kr")
 
-TIME_ZONE = "UTC"
+TIME_ZONE = "Asia/Seoul"
 
 USE_I18N = True
 
@@ -185,13 +192,14 @@ USE_TZ = True
 #
 # MEDIA_ROOT = BASE_DIR / "media"
 
-STATIC_URL = "static/"
-STATIC_ROOT = os.path.join(BASE_DIR, "static")
+STATIC_URL = "/static/"
+STATIC_ROOT = os.path.join(BASE_DIR, "/static")
 STATICFILES_DIRS = [
     BASE_DIR / "core" / "src-django-components",
 ]
-MEDIA_ROOT = BASE_DIR / "media"
 MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
