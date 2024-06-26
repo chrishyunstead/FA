@@ -2,9 +2,7 @@
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-
 from load_model_type_a import load_Auto
-
 from pack.load_push import all_files
 from pack.retriever import *
 from pack.retrieve_docs import *
@@ -17,12 +15,12 @@ pinecone,bm25 = all_files('files')
 retriever=retriever(pinecone,bm25)
 rag_chain = make_chain_llm(retriever,llm)
 
-# 요청 바디 모델 정의
+# 요청 바디
 class QueryRequest(BaseModel):
     query: str
 
 
-# 응답 바디 모델 정의
+# 응답 바디
 class QueryResponse(BaseModel):
     response: str
 

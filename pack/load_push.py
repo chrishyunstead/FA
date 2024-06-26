@@ -3,7 +3,6 @@ import os
 from langchain_community.document_loaders import PyMuPDFLoader, TextLoader, CSVLoader
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.docstore.document import Document
-from sentence_transformers import SentenceTransformer
 from langchain_pinecone import PineconeVectorStore
 from pinecone.grpc import PineconeGRPC as Pinecone
 from pinecone import ServerlessSpec
