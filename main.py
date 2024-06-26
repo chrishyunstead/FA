@@ -3,11 +3,11 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from load_model_type_a import load_Auto
-from pack.load_push import all_files
-from pack.retriever import *
-from pack.retrieve_docs import *
-from pack.make_chain_model import make_chain_llm
-from pack.make_answer import *
+from llmteam.load_push import all_files
+from llmteam.retriever import *
+from llmteam.retrieve_docs import *
+from llmteam.make_chain_model import make_chain_llm
+from llmteam.make_answer import *
 
 app = FastAPI()
 llm = load_Auto()
