@@ -15,8 +15,10 @@ from .forms import (
     MatchResultForm,
     MatchResultEditForm,
     DateSelectForm,
+    TeamBoardForm,
+    BoardCommentForm,
 )
-from .models import Team, Match, MatchResult, Message
+from .models import Team, Match, MatchResult, Message, Teamboard, BoardComment
 from team.decorators import group_required
 from .serializers import MessageSerializer
 
@@ -273,11 +275,15 @@ def join_match(request, match_id):
 
 
 # 팀스토리는 접근 제한은 로그인한 사용자만으로 지정
-@login_required
+# @login_required
 def team_story(request):
-    user = request.user
-    team = user.team_no if user.team_no else None
-    results = MatchResult.objects.filter(Q(team=team) | Q(opponent=team))
+    user = request.user if request.user.is_authenticated else None
+    team = user.team_no if user and user.team_no else None
+    # results = (
+    #     MatchResult.objects.filter(Q(team=team) | Q(opponent=team))
+    #     if team
+    #     else MatchResult.objects.none()
+    # )
 
     # 모든 팀의 순위를 계산
     teams = Team.objects.all().order_by("-points", "-goal_difference")
@@ -300,11 +306,23 @@ def team_story(request):
     matches = Match.objects.all().order_by("-date")
     match_results = MatchResult.objects.all()
 
+    # 경기 일정에 결과 추가
+    match_results_dict = {}
+    for result in match_results:
+        match_key = (result.date, result.team_id, result.opponent_id)
+        match_results_dict[match_key] = result
+
+    for match in matches:
+        match_key_1 = (match.date, match.team_id, match.team_vs_id)
+        match_key_2 = (match.date, match.team_vs_id, match.team_id)
+        match.result = match_results_dict.get(match_key_1) or match_results_dict.get(
+            match_key_2
+        )
+
     context = {
         "team": team,
         "team_rankings": team_rankings,
         "matches": matches,
-        "match_results": match_results,
     }
     return render(request, "team_story.html", context)
 
@@ -567,3 +585,179 @@ def delete_team(request):
             "팀을 삭제할 수 없습니다. 팀에 다른 멤버가 존재하거나 권한이 없습니다.",
         )
     return redirect("accounts:main")
+
+
+@login_required
+def board_list(request, team_id):
+    team = get_object_or_404(Team, pk=team_id)
+    if request.user not in team.members.all():
+        return redirect("team:team_dashboard", team_id=team_id)
+
+    all_contents = Teamboard.objects.filter(team=team).order_by("-createDate")
+    return render(
+        request,
+        "ourboard/board_list.html",
+        {"all_contents": all_contents, "team": team},
+    )
+
+
+# view : 게시글 등록
+@login_required
+def board_create(request, team_id):
+    team = get_object_or_404(Team, pk=team_id)
+    if request.user not in team.members.all():
+        return redirect("team:team_dashboard", team_id=team_id)
+
+    if request.method == "GET":
+        form = TeamBoardForm()
+        return render(
+            request, "ourboard/board_create.html", {"form": form, "team": team}
+        )
+
+    if request.method == "POST":
+        form = TeamBoardForm(request.POST, request.FILES)
+        if form.is_valid():
+            board = form.save(commit=False)
+            board.createUser = request.user
+            board.team = team  # 게시글이 속한 팀 설정
+            board.save()
+            return redirect("team:board_list", team_id=team_id)
+        else:
+            context = {"form": form, "team": team}
+            return render(request, "ourboard/board_create.html", context)
+
+
+# view : 게시글 상세보기 + 댓글조회 + 댓글등록
+def board_detail(request, team_id, pk):
+    team = get_object_or_404(Team, pk=team_id)
+    if request.user not in team.members.all():
+        return redirect("team:team_dashboard", team_id=team_id)
+
+    board = get_object_or_404(Teamboard, pk=pk, team=team)
+    comment_board = BoardCommentForm()
+    user_comment = board.comments.filter(commentUser=request.user).exists()
+
+    if request.method == "POST":
+        comment_form = BoardCommentForm(request.POST)
+        if comment_form.is_valid():
+            comment = comment_form.save(commit=False)
+            comment.commentUser = request.user
+            comment.teamboard = board
+            comment.attendStatus = request.POST.get("attendStatus")
+            comment.save()
+            board.commentCnt += 1
+            board.save()
+            return redirect("team:board_detail", team_id=team_id, pk=board.pk)
+    elif request.method == "GET":
+        board.viewCnt += 1
+        board.save()
+
+    comments = board.comments.all()
+    return render(
+        request,
+        "ourboard/board_detail.html",
+        {
+            "board": board,
+            "comment_board": comment_board,
+            "comments": comments,
+            "user_comment": user_comment,
+            "team": team,
+        },
+    )
+
+
+# view : 게시글 수정
+@login_required
+def board_update(request, team_id, pk):
+    team = get_object_or_404(Team, pk=team_id)
+    if request.user not in team.members.all():
+        return redirect("team:team_dashboard", team_id=team_id)
+
+    board = get_object_or_404(Teamboard, pk=pk, team=team)
+    if board.createUser != request.user:
+        return redirect("team:board_list", team_id=team_id)
+
+    if request.method == "POST":
+        form = TeamBoardForm(request.POST, request.FILES, instance=board)
+        if form.is_valid():
+            update_board = form.save()
+            return redirect("team:board_detail", team_id=team_id, pk=update_board.pk)
+    else:
+        form = TeamBoardForm(instance=board)
+        context = {"form": form, "team": team, "pk": pk}
+        return render(request, "ourboard/board_update.html", context)
+
+
+# view : 게시글 삭제
+@login_required
+def board_delete(request, team_id, pk):
+    team = get_object_or_404(Team, pk=team_id)
+    if request.user not in team.members.all():
+        return redirect("team:team_dashboard", team_id=team_id)
+
+    board = get_object_or_404(Teamboard, pk=pk, team=team)
+    if board.createUser != request.user:
+        return redirect("team:board_list", team_id=team_id)
+
+    if request.method == "POST":
+        board.delete()
+    return redirect("team:board_list", team_id=team_id)
+
+
+# view : 게시글에 달린 댓글 삭제
+@login_required
+def board_comment_delete(request, team_id, pk):
+    comment = get_object_or_404(BoardComment, pk=pk)
+    teamboard_pk = comment.teamboard.pk  # 삭제 후 redirect할 때 사용할 teamboard의 pk
+    team = comment.teamboard.team  # 댓글이 속한 팀을 가져옴
+
+    # 현재 로그인한 사용자가 팀 멤버인지 확인
+    if request.user not in team.members.all():
+        return redirect("team:team_dashboard", team_id=team_id)
+
+    # 현재 로그인한 사용자가 댓글을 작성한 사용자와 동일한지 확인
+    if comment.commentUser != request.user:
+        return redirect("team:board_list", team_id=team_id)
+
+    if request.method == "POST":
+        comment.delete()
+        # 댓글이 삭제되었으므로 해당 게시글의 댓글 개수(commentCnt)를 1 감소시킴
+        comment.teamboard.commentCnt -= 1
+        comment.teamboard.save()
+        return redirect("team:board_detail", team_id=team_id, pk=teamboard_pk)
+
+    return render(
+        request,
+        "ourboard/board_comment_confirm_delete.html",
+        {"comment": comment, "team": team},
+    )
+
+
+@login_required
+def board_comment_update(request, team_id, pk):
+    comment = get_object_or_404(BoardComment, pk=pk)
+    team = comment.teamboard.team  # 댓글이 속한 팀을 가져옴
+
+    # 현재 로그인한 사용자가 팀 멤버인지 확인
+    if request.user not in team.members.all():
+        return redirect("team:team_dashboard", team_id=team_id)
+
+    # 현재 로그인한 사용자가 댓글을 작성한 사용자와 동일한지 확인
+    if comment.commentUser != request.user:
+        return redirect("team:board_list", team_id=team_id)
+
+    if request.method == "POST":
+        form = BoardCommentForm(request.POST, instance=comment)
+        if form.is_valid():
+            form.save()
+            return redirect(
+                "team:board_detail", team_id=team_id, pk=comment.teamboard.pk
+            )
+    else:
+        form = BoardCommentForm(instance=comment)
+
+    return render(
+        request,
+        "ourboard/comment_update.html",
+        {"form": form, "team": team, "comment": comment},
+    )

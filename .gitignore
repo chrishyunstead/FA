@@ -3,7 +3,7 @@
 venv
 db.sqlite3
 __pycache__
-staticfiles
+#staticfiles
 #mediafiles
 .DS_Store
 .python-version
@@ -15,7 +15,7 @@ my_settings.py
 *.pot
 *.pyc
 __pycache__/
-#media
+media
 
 
 # If your build process includes running tests, coverage reports will go here

@@ -150,6 +150,8 @@ def delete_user(request):
 
 # 메인화면 뷰
 def main(request):
+    user = request.user if request.user.is_authenticated else None
+    team = user.team_no if user and user.team_no else None
     # results = MatchResult.objects.filter(team=team) if team else None
     teams = Team.objects.all().order_by("-points", "-goal_difference")
     team_rankings = []
@@ -170,6 +172,19 @@ def main(request):
     matches = Match.objects.all().order_by("-date")
     match_results = MatchResult.objects.all()
 
+    # 경기 일정에 결과 추가
+    match_results_dict = {}
+    for result in match_results:
+        match_key = (result.date, result.team_id, result.opponent_id)
+        match_results_dict[match_key] = result
+
+    for match in matches:
+        match_key_1 = (match.date, match.team_id, match.team_vs_id)
+        match_key_2 = (match.date, match.team_vs_id, match.team_id)
+        match.result = match_results_dict.get(match_key_1) or match_results_dict.get(
+            match_key_2
+        )
+
     # 축구 뉴스 기사 가져오기
     articles = fetch_football_news()
 
@@ -177,7 +192,6 @@ def main(request):
         "team": team,
         "team_rankings": team_rankings,
         "matches": matches,
-        "match_results": match_results,
         "articles": articles,
     }
     return render(request, "accounts/main.html", context)

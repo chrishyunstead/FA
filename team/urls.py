@@ -44,4 +44,24 @@ urlpatterns = [
     path("video_analysis/<int:team_id>", views.video_analysis, name="video_analysis"),
     path("leave_team/", views.leave_team, name="leave_team"),
     path("delete_team/", views.delete_team, name="delete_team"),
+    # 게시판 리스트 url
+    path("board/<int:team_id>/", views.board_list, name="board_list"),
+    path("board/<int:team_id>/create/", views.board_create, name="board_create"),
+    path("board/<int:team_id>/<int:pk>/", views.board_detail, name="board_detail"),
+    path(
+        "board/<int:team_id>/<int:pk>/update/", views.board_update, name="board_update"
+    ),
+    path(
+        "board/<int:team_id>/<int:pk>/delete/", views.board_delete, name="board_delete"
+    ),
+    path(
+        "board/<int:team_id>/<int:pk>/comment_delete/",
+        views.board_comment_delete,
+        name="board_comment_delete",
+    ),
+    path(
+        "board/<int:team_id>/<int:pk>/comment_update/",
+        views.board_comment_update,
+        name="board_comment_update",
+    ),
 ]
