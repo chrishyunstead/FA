@@ -1,14 +1,15 @@
-import asyncio
-import json
+# import asyncio
+# import json
 
 import requests
 from django.shortcuts import render
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from transformers import AutoModelForCausalLM, AutoTokenizer
-import torch
 
-from my_settings import HUGGINGFACE_TOKEN
+# from django.views.decorators.csrf import csrf_exempt
+# from transformers import AutoModelForCausalLM, AutoTokenizer
+# import torch
+#
+# from my_settings import HUGGINGFACE_TOKEN
 
 # # GGUF 모델 로드
 # model_name = "Dongwookss/small_fut_final"
@@ -113,21 +114,39 @@ from my_settings import HUGGINGFACE_TOKEN
 #     return render(request, "chatbot.html")
 
 
-def get_model_response(input_text):
-    url = "http://127.0.0.1:8000/generate"  # FastAPI 서버의 IP 주소와 포트 사용
-    headers = {"Content-Type": "application/json"}
-    data = {"input_text": input_text}
+# def get_model_response(input_text):
+#     url = "http://127.0.0.1:8000/generate"  # FastAPI 서버의 IP 주소와 포트 사용
+#     headers = {"Content-Type": "application/json"}
+#     data = {"input_text": input_text}
+#
+#     response = requests.post(url, json=data, headers=headers)
+#     if response.status_code == 200:
+#         return response.json().get("response")
+#     else:
+#         return "Error: Unable to get response"
+#
+#
+# def chatbot_view(request):
+#     if request.method == "POST":
+#         input_text = request.POST.get("input_text")
+#         response_text = get_model_response(input_text)
+#         return JsonResponse({"response": response_text})
+#     return render(request, "chatbot.html")
 
-    response = requests.post(url, json=data, headers=headers)
-    if response.status_code == 200:
-        return response.json().get("response")
-    else:
-        return "Error: Unable to get response"
 
-
-def chatbot_view(request):
+# 이걸로
+def chat_view(request):
     if request.method == "POST":
-        input_text = request.POST.get("input_text")
-        response_text = get_model_response(input_text)
-        return JsonResponse({"response": response_text})
-    return render(request, "chatbot.html")
+        message = request.POST.get(
+            "message"
+        )  # 사용자의 질문을 받아옵니다.(질문형태 str일 경우)
+
+        # <AWS_EC2_PUBLIC_IP> : aws ip주소 적고
+        # 8000번은 fastapi 지정한 포트번호
+        response = requests.post(
+            "http://<AWS_EC2_PUBLIC_IP>:8000/chat", data={"message": message}
+        )  # FastAPI 서버에 문자열 형태로 질문을 전송합니다.
+        return JsonResponse(
+            response.json()
+        )  # FastAPI 서버에서 받은 JSON 응답을 사용자에게 반환합니다.
+    return render(request, "chatbot.html")  # GET 요청인 경우, 챗봇 폼을 렌더링합니다.

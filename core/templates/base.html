@@ -226,7 +226,7 @@
                         <a href="{% url 'team:myteam' %}">My Team</a>
                     </div>
                 </li>
-                <li class="nav-item navbar-item"><a href="#" class="nav-link">Chatbot</a></li>
+                <li class="nav-item navbar-item"><a href="{% url 'chatbot:chat_view' %}" class="nav-link">Chatbot</a></li>
             </ul>
         </header>
          {% block banner %}{% endblock %}
